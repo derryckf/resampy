@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-"""Numba implementation of resampler"""
+'''Numba implementation of resampler'''
 
-from numba import guvectorize, jit, prange
+import numba
 
 
-def _resample_loop(x, t_out, interp_win, interp_delta, num_table, scale, y):
+@numba.jit(nopython=True, nogil=True)
+def resample_f(x, y, sample_ratio, interp_win, interp_delta, num_table):
 
+    scale = min(1.0, sample_ratio)
+    time_increment = 1./sample_ratio
     index_step = int(scale * num_table)
     time_register = 0.0
 
@@ -18,11 +21,10 @@ def _resample_loop(x, t_out, interp_win, interp_delta, num_table, scale, y):
 
     nwin = interp_win.shape[0]
     n_orig = x.shape[0]
-    n_out = t_out.shape[0]
+    n_out = y.shape[0]
+    n_channels = y.shape[1]
 
-    for t in prange(n_out):
-        time_register = t_out[t]
-
+    for t in range(n_out):
         # Grab the top bits as an index to the input buffer
         n = int(time_register)
 
@@ -40,11 +42,9 @@ def _resample_loop(x, t_out, interp_win, interp_delta, num_table, scale, y):
         i_max = min(n + 1, (nwin - offset) // index_step)
         for i in range(i_max):
 
-            weight = (
-                interp_win[offset + i * index_step]
-                + eta * interp_delta[offset + i * index_step]
-            )
-            y[t] += weight * x[n - i]
+            weight = (interp_win[offset + i * index_step] + eta * interp_delta[offset + i * index_step])
+            for j in range(n_channels):
+                y[t, j] += weight * x[n - i, j]
 
         # Invert P
         frac = scale - frac
@@ -57,30 +57,11 @@ def _resample_loop(x, t_out, interp_win, interp_delta, num_table, scale, y):
         eta = index_frac - offset
 
         # Compute the right wing of the filter response
-        k_max = min(n_orig - n - 1, (nwin - offset) // index_step)
+        k_max = min(n_orig - n - 1, (nwin - offset)//index_step)
         for k in range(k_max):
-            weight = (
-                interp_win[offset + k * index_step]
-                + eta * interp_delta[offset + k * index_step]
-            )
-            y[t] += weight * x[n + k + 1]
+            weight = (interp_win[offset + k * index_step] + eta * interp_delta[offset + k * index_step])
+            for j in range(n_channels):
+                y[t, j] += weight * x[n + k + 1, j]
 
-
-_resample_loop_p = jit(nopython=True, nogil=True, parallel=True)(_resample_loop)
-_resample_loop_s = jit(nopython=True, nogil=True, parallel=False)(_resample_loop)
-
-
-@guvectorize(
-    "(n),(m),(p),(p),(),()->(m)",
-    nopython=True,
-)
-def resample_f_p(x, t_out, interp_win, interp_delta, num_table, scale, y):
-    _resample_loop_p(x, t_out, interp_win, interp_delta, num_table, scale, y)
-
-
-@guvectorize(
-    "(n),(m),(p),(p),(),()->(m)",
-    nopython=True,
-)
-def resample_f_s(x, t_out, interp_win, interp_delta, num_table, scale, y):
-    _resample_loop_s(x, t_out, interp_win, interp_delta, num_table, scale, y)
+        # Increment the time register
+        time_register += time_increment

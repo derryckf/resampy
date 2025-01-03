@@ -55,10 +55,7 @@ master_doc = 'index'
 project = u'resampy'
 copyright = u'2016, Brian McFee'
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
+import mock
 MOCK_MODULES = ['numpy', 'scipy', 'scipy.signal', 'resampy.interp', 'numba']
 sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 
@@ -66,10 +63,8 @@ sys.modules.update((mod_name, mock.Mock()) for mod_name in MOCK_MODULES)
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-import importlib.util
-spec = importlib.util.spec_from_file_location('resampy.version', '../resampy/version.py')
-resampy_version = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(resampy_version)
+import imp
+resampy_version = imp.load_source('resampy.version', '../resampy/version.py')
 
 # The short X.Y version.
 version = resampy_version.short_version
@@ -149,7 +144,7 @@ html_theme = 'default'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -282,6 +277,6 @@ texinfo_documents = [
 numpydoc_show_class_members = False
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'numpy': ('https://numpy.org/doc/stable/', None),
-                       'scipy': ('https://docs.scipy.org/doc/scipy/', None)}
+intersphinx_mapping = {'python': ('http://docs.python.org/', None),
+                       'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+                       'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None)}

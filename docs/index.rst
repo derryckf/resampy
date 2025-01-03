@@ -27,14 +27,14 @@ For a quick introduction to using `resampy`, please refer to the `Examples`_ sec
 
 Installation
 ------------
-`resampy` can be installed through `pip`:
+`resampy` can be installed from source through `pip`:
 
 .. code-block:: bash
 
-    python -m pip install resampy
+    pip install resampy
 
 
-Conda users can install via the following command:
+Conda users can install pre-compiled packages:
 
 .. code-block:: bash
 
@@ -47,7 +47,8 @@ Advanced users and developers may wish to install from source by cloning the sou
 
     git clone https://github.com/bmcfee/resampy.git
     cd resampy
-    python -m pip install -e .
+    python setup.py build_ext -i
+    pip install -e .
 
 
 Running tests
@@ -58,8 +59,9 @@ executing the following commands from the source directory:
 
 .. code-block:: bash
 
-    python -m pip install -e .[tests]
-    pytest --cov-report term-missing --cov resampy
+    pip install -e .[tests]
+    pip install pytest pytest-cov pytest-faulthandler
+    py.test --cov-report term-missing --cov resampy
 
 
 Examples
